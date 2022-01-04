@@ -37,7 +37,16 @@ export default class ListInfoWebPart extends BaseClientSideWebPart<IListInfoWebP
     return Version.parse('1.0');
   }
 
- 
+ public validateDscription(input:string):string{
+
+  if(input===null||input.trim().length===0){
+    return "description is required";
+  }
+  if(input.length>=12){
+    return "your description should not be longer than 12";
+  }
+   return "";
+ }
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
       pages: [
@@ -50,7 +59,8 @@ export default class ListInfoWebPart extends BaseClientSideWebPart<IListInfoWebP
               groupName: strings.BasicGroupName,
               groupFields: [
                 PropertyPaneTextField('description', {
-                  label: strings.DescriptionFieldLabel
+                  label: strings.DescriptionFieldLabel,
+                  onGetErrorMessage:this.validateDscription.bind(this)
                 })
               ]
             }
