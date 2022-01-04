@@ -4,6 +4,7 @@ import {
   PropertyPaneTextField
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
+import {SPHttpClient,SPHttpClientResponse} from '@microsoft/sp-http';
 import { escape } from '@microsoft/sp-lodash-subset';
 
 import styles from './ListInfoWebPart.module.scss';
@@ -11,6 +12,7 @@ import * as strings from 'ListInfoWebPartStrings';
 
 export interface IListInfoWebPartProps {
   description: string;
+  listName:string;
 }
 
 export default class ListInfoWebPart extends BaseClientSideWebPart<IListInfoWebPartProps> {
@@ -47,6 +49,25 @@ export default class ListInfoWebPart extends BaseClientSideWebPart<IListInfoWebP
   }
    return "";
  }
+ private async validateListName(value:string):Promise<string>{
+   if(value===null||value.trim().length===0){
+     return "provide the list name"
+   }
+   try {
+     let response=await this.context.spHttpClient.get(
+       this.context.pageContext.web.absoluteUrl + `/_api/web/lists/getByTitle('${escape(value)}')?$select=Id`,
+       SPHttpClient.configurations.v1);
+       if(response.ok){
+         return "";
+       }else if(response.status===404){
+         return `list '${escape(value)}' doesn't exist in the current site`
+       }else{
+         return `Error:${response.statusText}. please try agan`
+       }
+   } catch (error) {
+     return error.message;
+   }
+ }
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
       pages: [
@@ -61,6 +82,11 @@ export default class ListInfoWebPart extends BaseClientSideWebPart<IListInfoWebP
                 PropertyPaneTextField('description', {
                   label: strings.DescriptionFieldLabel,
                   onGetErrorMessage:this.validateDscription.bind(this)
+                }),
+                PropertyPaneTextField('listName',{
+                  label:strings.ListNameFieldLabel,
+                  onGetErrorMessage:this.validateListName.bind(this),
+                  deferredValidationTime:1000
                 })
               ]
             }
